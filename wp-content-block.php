@@ -4,7 +4,7 @@ Plugin Name: WP Content Block
 Plugin URI: http://www.wordpress.org
 Description: Plugin for adding block to context
 Author: John Svensson
-Version: 1.0
+Version: 1.1
 Author URI: http://www.johnsvensson.com
 */
 
@@ -104,17 +104,27 @@ function wcb_meta_boxes($post) {
   //echo '<input type="text" id="wcb_regions" name="wcb_regions" value="' . get_post_meta($post->ID, "wcb_regions", true) . '" size="25" />';
   
 	$e_regions = explode("\n", get_option('block_options_regions'));
+	
+
+    global $wp_registered_sidebars;    
+    $e_regions = $wp_registered_sidebars;
+
+	
 	//echo get_post_meta($post->ID, "wcb_regions", true);
+
+
   echo '<select name="wcb_regions">';
   echo '<option value="">- None -</option>';
   foreach ( $e_regions as $e_region ) {
   	//echo trim($e_region);
+  	
   	echo '<option ';
-  	if ( get_post_meta($post->ID, "wcb_regions", true) == trim($e_region) ) echo 'selected="selected" ';
-  	echo 'value="'.$e_region.'">'.$e_region.'</option>';
+  	if ( get_post_meta($post->ID, "wcb_regions", true) == trim($e_region['id']) ) echo 'selected="selected" ';
+  	echo 'value="'.$e_region['id'].'">'.$e_region['name'].'</option>';
   }
 
 	echo "</select>";  
+
   echo '<p class="description">';
        _e("Show block in specific region", 'wcb_textdomain' );
   echo '</p>';
@@ -234,6 +244,8 @@ function wcb_output($block_class='', $title='', $title_after='', $region=null) {
 }
 
 // options page
+// Removed in 1.1
+/*
 add_action('admin_menu', 'plugin_admin_add_page');
 function plugin_admin_add_page() {
 	add_options_page('Block options', 'Block options', 'activate_plugins', 'block_options', 'block_options_page');
@@ -262,7 +274,7 @@ function block_options_page() {
     </form>  
 	</div>  
 <?php  
-}  
+}  */
 
 
 
