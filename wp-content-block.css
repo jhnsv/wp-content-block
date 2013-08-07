@@ -1,0 +1,12 @@
+
+
+#wcb_meta_boxes input {
+  display: inline; 
+  margin-right: 5px;
+}
+
+#wcb_meta_boxes #wcb_block_specific_page {
+  width: 100%;
+  height: 100px;
+  resize: none;
+}
