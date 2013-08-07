@@ -193,8 +193,9 @@ function wcb_output($block_class='', $title='', $title_after='', $region=null) {
     WHERE $wpdb->postmeta.meta_key = 'wcb_block_specific_page'
   ");
   
-  
-  $permalink = esc_url($_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"]);
+  // does not work with port numbers
+  //$permalink = esc_url($_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"]);
+  $permalink = get_permalink();
     
   // clean up the path
   $remove = get_bloginfo('url');
@@ -245,10 +246,9 @@ function wcb_output($block_class='', $title='', $title_after='', $region=null) {
 
 // options page
 // Removed in 1.1
-/*
 add_action('admin_menu', 'plugin_admin_add_page');
 function plugin_admin_add_page() {
-	add_options_page('Block options', 'Block options', 'activate_plugins', 'block_options', 'block_options_page');
+	//add_options_page('Block options', 'Block options', 'activate_plugins', 'block_options', 'block_options_page');
 }
 ?>
 <?php // display the admin options page
@@ -274,7 +274,7 @@ function block_options_page() {
     </form>  
 	</div>  
 <?php  
-}  */
+} 
 
 
 
