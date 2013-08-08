@@ -182,7 +182,7 @@ function wcb_save_postdata($post_id) {
 }
 
 
-function wcb_output($block_class='', $title='', $title_after='', $region=null) {
+function wcb_output($block_class='', $before='', $after='', $region=null) {
 
   $title_after = str_replace("<", "</", $title);
   global $post;
@@ -229,10 +229,10 @@ function wcb_output($block_class='', $title='', $title_after='', $region=null) {
 	  			$output .= "</figure>\n";
 				} 
 
-	      if ( $title ) :
-	        $output .= "\t\t" . $title;
+	      if ( $before ) :
+	        $output .= "\t\t" . $before;
 	          $output .= get_the_title(); 
-	        $output .= $title_after . "\n";
+	        $output .= $after . "\n";
 	      endif;
 	      $output .= "\t\t<div class=\"wp-content-block-content inner\">\n";
 	        $output .= "\t\t\t" . wpautop(do_shortcode(get_the_content())); 
