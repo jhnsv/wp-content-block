@@ -5,6 +5,8 @@ Plugin URI: http://www.wordpress.org
 Description: Plugin for adding block to context
 Author: John Svensson
 Version: 1.1.1
+Text Domain: wpcb
+Domain Path: /languages/
 Author URI: http://www.johnsvensson.com
 */
 
@@ -17,7 +19,7 @@ add_action('save_post', 'wcb_save_postdata');
 // add css to plugin
 add_action('admin_print_styles','wcb_add_admin_css');
 // some translation stuff
-add_action('init', 'wcb_textdomain');
+load_plugin_textdomain('wpcb', false, basename( dirname( __FILE__ ) ) . '/languages');
 
 // stolen from ... guess? Drupal! Well it's open source aint it?
 function drupal_match_path($path, $patterns) {
@@ -42,12 +44,6 @@ function drupal_match_path($path, $patterns) {
   return preg_match($regexps[$patterns], $path);
 }
 
-function wcb_textdomain() {
-  if (function_exists('load_plugin_textdomain')) {
-    load_plugin_textdomain('wp-content-block', false, 'wp-content-block');
-  }		
-}
-
 function wcb_add_admin_css() {
   $x = WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__));
   echo '<link rel="stylesheet" type="text/css" href="'.$x.'/wp-content-block.css" />';
@@ -58,13 +54,14 @@ function wcb_create_post_type () {
   register_post_type( 'block',
     array(
       'labels' => array(
-		    'name' => __( 'Blocks' ),
-				'singular_name' => __( 'Block' )
+		    'name' => __( 'Blocks', 'wpcb' ),
+				'singular_name' => __( 'Block', 'wpcb' )
 			),
 		'public' => true,
 		'capability_type' => 'page',
 		'has_archive' => true,
-		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail')
+		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail'),
+		'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
 		)
 	);
 }
@@ -74,7 +71,7 @@ function wcb_add_custom_box() {
 
   add_meta_box( 
     'wcb_meta_boxes',
-    __( 'WP content block', 'wcb_textdomain' ),
+    __( 'WP content block', 'wpcb' ),
     'wcb_meta_boxes',
     'block',
     'side'
@@ -86,21 +83,21 @@ function wcb_meta_boxes($post) {
   // Use nonce for verification
   wp_nonce_field( plugin_basename( __FILE__ ), 'wcb_noncename' );
   
-  echo "<h4>" . __( 'Show block on specific pages', 'wcb_textdomain' ) . "</h4>";
+  echo "<h4>" . __( 'Show block on specific pages', 'wpcb' ) . "</h4>";
   echo '<textarea id="wcb_block_specific_page" name="wcb_block_specific_page">';
   echo get_post_meta($post->ID, "wcb_block_specific_page", true);
   echo '</textarea>';
   echo '<p class="description">';
-  _e("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page.", 'wcb_textdomain' );
+  _e("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page.", 'wpcb' );
   echo '</p>';
 
-  echo "<h4>" . __( 'Extra classes', 'wcb_textdomain' ) . "</h4>";
+  echo "<h4>" . __( 'Extra classes', 'wpcb' ) . "</h4>";
   echo '<input type="text" id="wcb_extra_block_classes" name="wcb_extra_block_classes" value="' . get_post_meta($post->ID, "wcb_extra_block_classes", true) . '" size="25" />';
   echo '<p class="description">';
-       _e("Add extra classes separated by space", 'wcb_textdomain' );
+       _e("Add extra classes separated by space", 'wpcb' );
   echo '</p>';
   
-  echo "<h4>" . __( 'Regions', 'wcb_textdomain' ) . "</h4>";
+  echo "<h4>" . __( 'Regions', 'wpcb' ) . "</h4>";
   //echo '<input type="text" id="wcb_regions" name="wcb_regions" value="' . get_post_meta($post->ID, "wcb_regions", true) . '" size="25" />';
   
 	$e_regions = explode("\n", get_option('block_options_regions'));
@@ -114,7 +111,7 @@ function wcb_meta_boxes($post) {
 
 
   echo '<select name="wcb_regions">';
-  echo '<option value="">- None -</option>';
+  echo '<option value="">' . __( 'Hide block', 'wpcb' ). '</option>';
   foreach ( $e_regions as $e_region ) {
   	//echo trim($e_region);
   	
@@ -126,7 +123,7 @@ function wcb_meta_boxes($post) {
 	echo "</select>";  
 
   echo '<p class="description">';
-       _e("Show block in specific region", 'wcb_textdomain' );
+       _e("Show block in specific region", 'wpcb' );
   echo '</p>';
 }
 

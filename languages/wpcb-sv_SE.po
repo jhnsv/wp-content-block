@@ -1,0 +1,58 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Content Block\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-08-07 15:56+0900\n"
+"PO-Revision-Date: 2013-08-08 11:49+0100\n"
+"Last-Translator: John Svensson <noreply@johnsvensson.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_c\n"
+"X-Poedit-Basepath: ../..\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 1.5.6\n"
+"X-Poedit-SearchPath-0: wp-content-block\n"
+
+#: wp-content-block/wp-content-block.php:57
+msgid "Block"
+msgstr "Block"
+
+#: wp-content-block/wp-content-block.php:58
+msgid "Blocks"
+msgstr "Block"
+
+#: wp-content-block/wp-content-block.php:74
+msgid "WP content block"
+msgstr "WP innehållsblock"
+
+#: wp-content-block/wp-content-block.php:86
+msgid "Show block on specific pages"
+msgstr "Visa block på specifik sida"
+
+#: wp-content-block/wp-content-block.php:91
+msgid "Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page."
+msgstr "Välj sidor genom deras sökväg. En sökväg per rad. Tecknet '*' är ett jokertecken. Exempel på sökvägar är blogg för blogg-sidan och blogg/* för alla undersidor till blogg. &lt;front&gt; är startsidan."
+
+#: wp-content-block/wp-content-block.php:94
+msgid "Extra classes"
+msgstr "Extra css-klasser"
+
+#: wp-content-block/wp-content-block.php:97
+msgid "Add extra classes separated by space"
+msgstr "Lägg till extra css-klasser, separerade med mellanslag"
+
+#: wp-content-block/wp-content-block.php:100
+msgid "Regions"
+msgstr "Regioner"
+
+#: wp-content-block/wp-content-block.php:114
+msgid "Hide block"
+msgstr "Göm block"
+
+#: wp-content-block/wp-content-block.php:126
+msgid "Show block in specific region"
+msgstr ""
+
