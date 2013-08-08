@@ -61,6 +61,7 @@ function wcb_create_post_type () {
 		'capability_type' => 'page',
 		'has_archive' => true,
 		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail', 'revisions'),
+		'publicly_queryable' => false,
 		//'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
 		)
 	);
