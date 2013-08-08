@@ -4,7 +4,7 @@ Plugin Name: WP Content Block
 Plugin URI: http://www.wordpress.org
 Description: Plugin for adding block to context
 Author: John Svensson
-Version: 1.1
+Version: 1.1.1
 Author URI: http://www.johnsvensson.com
 */
 
@@ -64,7 +64,7 @@ function wcb_create_post_type () {
 		'public' => true,
 		'capability_type' => 'page',
 		'has_archive' => true,
-		'supports' => array('title', 'editor', 'page-attributes')
+		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail')
 		)
 	);
 }
@@ -223,14 +223,20 @@ function wcb_output($block_class='', $title='', $title_after='', $region=null) {
       $block_class = get_post_meta($post->ID, "wcb_extra_block_classes", true);
       $output .= "<section id=\"wp-content-block-".$post->ID."\" class=\"wp-content-block module ".$block_class."\">\n";
 
-          if ( $title ) :
-            $output .= "\t\t" . $title;
-              $output .= get_the_title(); 
-            $output .= $title_after . "\n";
-          endif;
-          $output .= "\t\t<div class=\"wp-content-block-content inner\">\n";
-            $output .= "\t\t\t" . wpautop(do_shortcode(get_the_content())); 
-          $output .= "\t\t</div> <!-- /wp-content-block-content -->\n";
+				if ( has_post_thumbnail() ) {
+					$output .= "<figure>\n";
+	  				$output .= get_the_post_thumbnail() . "\n";
+	  			$output .= "</figure>\n";
+				} 
+
+	      if ( $title ) :
+	        $output .= "\t\t" . $title;
+	          $output .= get_the_title(); 
+	        $output .= $title_after . "\n";
+	      endif;
+	      $output .= "\t\t<div class=\"wp-content-block-content inner\">\n";
+	        $output .= "\t\t\t" . wpautop(do_shortcode(get_the_content())); 
+	      $output .= "\t\t</div> <!-- /wp-content-block-content -->\n";
 
       $output .= "</section>\n";
       unset($block_class);
