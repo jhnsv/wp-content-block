@@ -60,7 +60,7 @@ function wcb_create_post_type () {
 		'public' => true,
 		'capability_type' => 'page',
 		'has_archive' => true,
-		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail'),
+		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail', 'revisions'),
 		'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
 		)
 	);
@@ -181,7 +181,7 @@ function wcb_save_postdata($post_id) {
 
 function wcb_output($block_class='', $before='', $after='', $region=null) {
 
-  $title_after = str_replace("<", "</", $title);
+  $after = str_replace("<", "</", $before);
   global $post;
   global $wpdb;
   
