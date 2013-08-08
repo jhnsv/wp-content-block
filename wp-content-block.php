@@ -61,7 +61,7 @@ function wcb_create_post_type () {
 		'capability_type' => 'page',
 		'has_archive' => true,
 		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail', 'revisions'),
-		'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
+		//'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
 		)
 	);
 }
@@ -279,6 +279,12 @@ function block_options_page() {
 <?php  
 } 
 
-
-
-?>
+add_action( 'admin_head', 'wcb_icons' );
+function wcb_icons() {
+    ?>
+    <style type="text/css" media="screen">
+			.icon32-posts-block { background: url(<?php echo plugins_url('images/wp-content-block-icon32.png',  __FILE__); ?>) 0 0 no-repeat !important; }
+			#menu-posts-block .wp-menu-image { background: url(<?php echo plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__); ?>) no-repeat 6px 6px !important; }
+			#menu-posts-block:hover .wp-menu-image, #menu-posts-block.wp-has-current-submenu .wp-menu-image { background-position:6px -23px !important; }
+    </style>
+<?php } ?>
