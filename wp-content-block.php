@@ -4,79 +4,138 @@ Plugin Name: WP Content Block
 Plugin URI: http://www.wordpress.org
 Description: Plugin for adding block to context
 Author: John Svensson
-Version: 1.1.1
-Text Domain: wpcb
-Domain Path: /languages/
+Version: 2
 Author URI: http://www.johnsvensson.com
 */
 
+/*
+TODO
+- include css in load_custom_wp_admin_files
+- check permissions on save
+- make settings-field instead of multiple update_post_meta
+- auto-inject
+*/
+
+// settings page
+/*
+include 'wpcb-settings.php';
+if( is_admin() )
+    $my_settings_page = new WPCBSettings();
+  */  
+include 'wpcb-widget.php';
+// register Foo_Widget widget
+function register_wpcb_widget() {
+    register_widget( 'WPCB_Widget' );
+}
+add_action( 'widgets_init', 'register_wpcb_widget' );
+
 // create custom post type
-add_action('init', 'wcb_create_post_type');
+add_action('init', 'wpcb_create_post_type');
 // add meta box to block post type
 add_action('admin_init', 'wcb_add_custom_box', 1);
 // save post data
 add_action('save_post', 'wcb_save_postdata');
 // add css to plugin
 add_action('admin_print_styles','wcb_add_admin_css');
+// add some files to admin, REMOVED in v2
+//add_action( 'admin_enqueue_scripts', 'load_custom_wp_admin_files' );
+// add some fancy icons, tnx to @satto satto.se
+add_action( 'admin_head', 'wcb_icons' );
 // some translation stuff
 load_plugin_textdomain('wpcb', false, basename( dirname( __FILE__ ) ) . '/languages');
-
-// stolen from ... guess? Drupal! Well it's open source aint it?
-function drupal_match_path($path, $patterns) {
-  static $regexps;
-
-  if (!isset($regexps[$patterns])) {
-    // Convert path settings to a regular expression.
-    // Therefore replace newlines with a logical or, /* with asterisks and the <front> with the frontpage.
-    $to_replace = array(
-      '/(\r\n?|\n)/', // newlines
-      '/\\\\\*/', // asterisks
-      '/(^|\|)\\\\<front\\\\>($|\|)/', // <front>
-    );
-    $replacements = array(
-      '|',
-      '.*',
-      '\1' . preg_quote('', '/') . '\2',
-    );
-    $patterns_quoted = preg_quote($patterns, '/');
-    $regexps[$patterns] = '/^(' . preg_replace($to_replace, $replacements, $patterns_quoted) . ')$/';
-  }
-  return preg_match($regexps[$patterns], $path);
-}
+// add row in Right Now Dashboard
+add_action('right_now_content_table_end', 'add_wpcb_counts');
+// in later versions
+//add_action('dynamic_sidebar', 'wpcb_autoinject', 10, 1);
 
 function wcb_add_admin_css() {
   $x = WP_PLUGIN_URL.'/'.str_replace(basename( __FILE__),"",plugin_basename(__FILE__));
   echo '<link rel="stylesheet" type="text/css" href="'.$x.'/wp-content-block.css" />';
 }
 
-// create block post type
-function wcb_create_post_type () {
-  register_post_type( 'block',
+function load_custom_wp_admin_files() {
+  wp_enqueue_script( 'my_custom_script', plugins_url('/javascript/wpcb.min.js', __FILE__) );
+}
+
+// create wpcb (block) post type
+function wpcb_create_post_type () {
+  register_post_type( 'wpcb',
     array(
       'labels' => array(
-		    'name' => __( 'Blocks', 'wpcb' ),
-				'singular_name' => __( 'Block', 'wpcb' )
-			),
-		'public' => true,
-		'capability_type' => 'page',
-		'has_archive' => true,
-		'supports' => array('title', 'editor', 'page-attributes', 'thumbnail', 'revisions'),
-		'publicly_queryable' => false,
-		//'menu_icon' => plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__)
-		)
-	);
+        'name' => __( 'Blocks', 'wpcb' ),
+        'singular_name' => __( 'Block', 'wpcb' ),
+        'add_new_item' => __( 'Add new block', 'wpcb' ),
+        'not_found' => __( 'No blocks found.', 'wpcb' )
+      ),
+    'public' => true,
+    'capability_type' => 'page',
+    'has_archive' => true,
+    'supports' => array('title', 'editor', 'page-attributes', 'thumbnail', 'revisions'),
+    'publicly_queryable' => false,
+    'exclude_from_search' => true,
+    'show_in_nav_menus' => false,
+    'rewrite' => false,
+    )
+  );
 }
 
 // add the custom box at block screen
-function wcb_add_custom_box() {    
+function wcb_add_custom_box() {
 
   add_meta_box( 
     'wcb_meta_boxes',
-    __( 'WP content block', 'wpcb' ),
+    __( 'WP Content Block', 'wpcb' ),
     'wcb_meta_boxes',
-    'block',
+    'wpcb',
     'side'
   );
+}
+
+function construct_select($active) {
+
+  $output .= "<div class='wpcb-location-wrap'>";
+    $pages = get_pages();
+    $posts = get_posts(array('post_type' => 'post'));
+    //print_r($pages);
+    $output .= "<fieldset>";
+    
+    
+    
+    $output .= "<div><label class='wpcb-indent wpcb-indent-home' for='wcb_block_specific_page[]'><input type='checkbox' name='wcb_block_specific_page[]' value='home'";
+      if ( in_array('home', $active) ) {
+        $output .= " checked";  
+      }
+      $output .= ">Hem</label></div>";
+
+    $output .= "<div><label class='wpcb-indent wpcb-indent-single' for='wcb_block_specific_page[]'><input type='checkbox' name='wcb_block_specific_page[]' value='single'";
+      if ( in_array('single', $active) ) {
+        $output .= " checked";  
+      }
+      $output .= ">Singelpost</label></div>";   
+    
+    
+    foreach ( $pages as $page ) :
+    
+      $depth = count(get_ancestors($page->ID, 'page'));
+      $output .= "<div><label class='wpcb-indent wpcb-indent-$depth' for='wcb_block_specific_page[]'><input type='checkbox' name='wcb_block_specific_page[]' value='page-id-$page->ID'";
+      if ( in_array('page-id-'.$page->ID, $active) ) {
+        $output .= " checked";  
+      }
+      $output .= ">$page->post_title</label></div>";
+      
+    endforeach;
+    $output .= '<strong>Inlägg</strong>';
+    foreach ($posts as $single_post) :
+      $output .= "<div><label class='wpcb-indent' for='wcb_block_specific_page[]'><input type='checkbox' name='wcb_block_specific_page[]' value='postid-$single_post->ID'";
+      if (in_array('postid-'.$single_post->ID, $active)) {
+        $output .= " checked";  
+      }
+      $output .= ">$single_post->post_title</label></div>";
+    endforeach;
+    $output .= "</fieldset>";
+  $output .= "</div>";
+
+  return $output;
 }
 
 function wcb_meta_boxes($post) {
@@ -84,13 +143,10 @@ function wcb_meta_boxes($post) {
   // Use nonce for verification
   wp_nonce_field( plugin_basename( __FILE__ ), 'wcb_noncename' );
   
-  echo "<h4>" . __( 'Show block on specific pages', 'wpcb' ) . "</h4>";
-  echo '<textarea id="wcb_block_specific_page" name="wcb_block_specific_page">';
-  echo get_post_meta($post->ID, "wcb_block_specific_page", true);
-  echo '</textarea>';
-  echo '<p class="description">';
-  _e("Specify pages by using their paths. Enter one path per line. The '*' character is a wildcard. Example paths are blog for the blog page and blog/* for every personal blog. &lt;front&gt; is the front page.", 'wpcb' );
-  echo '</p>';
+  echo "<h4>" . __( 'Show block on', 'wpcb' ) . "</h4>";
+  $wcb_block_specific_pages = get_post_meta($post->ID, "wcb_block_specific_page");
+  
+  echo construct_select($wcb_block_specific_pages);
 
   echo "<h4>" . __( 'Extra classes', 'wpcb' ) . "</h4>";
   echo '<input type="text" id="wcb_extra_block_classes" name="wcb_extra_block_classes" value="' . get_post_meta($post->ID, "wcb_extra_block_classes", true) . '" size="25" />';
@@ -98,34 +154,44 @@ function wcb_meta_boxes($post) {
        _e("Add extra classes separated by space", 'wpcb' );
   echo '</p>';
   
-  echo "<h4>" . __( 'Regions', 'wpcb' ) . "</h4>";
-  //echo '<input type="text" id="wcb_regions" name="wcb_regions" value="' . get_post_meta($post->ID, "wcb_regions", true) . '" size="25" />';
+  echo "<h4>" . __( 'Link', 'wpcb' ) . "</h4>";
+  echo '<input type="text" id="wpcb_link" name="wpcb_link" value="' . get_post_meta($post->ID, "wpcb_link", true) . '" size="25" />';
+  echo '<p class="description">';
+       _e("Where to link this block", 'wpcb' );
+  echo '</p>';
   
-	$e_regions = explode("\n", get_option('block_options_regions'));
-	
-
-    global $wp_registered_sidebars;    
-    $e_regions = $wp_registered_sidebars;
-
-	
-	//echo get_post_meta($post->ID, "wcb_regions", true);
-
+  echo "<h4>" . __( 'Regions', 'wpcb' ) . "</h4>";
+  
+  global $wp_registered_sidebars;    
+  $e_regions = $wp_registered_sidebars;
 
   echo '<select name="wcb_regions">';
   echo '<option value="">' . __( 'Hide block', 'wpcb' ). '</option>';
   foreach ( $e_regions as $e_region ) {
-  	//echo trim($e_region);
-  	
-  	echo '<option ';
-  	if ( get_post_meta($post->ID, "wcb_regions", true) == trim($e_region['id']) ) echo 'selected="selected" ';
-  	echo 'value="'.$e_region['id'].'">'.$e_region['name'].'</option>';
+
+    echo '<option ';
+    if ( get_post_meta($post->ID, "wcb_regions", true) == trim($e_region['id']) ) echo 'selected="selected" ';
+    echo 'value="'.$e_region['id'].'">'.$e_region['name'].'</option>';
   }
 
-	echo "</select>";  
+  echo "</select>";  
 
   echo '<p class="description">';
        _e("Show block in specific region", 'wpcb' );
   echo '</p>';
+  
+/*  
+// Moved to settings
+  echo "<p>";
+    _e("Auto-inject in specified region");
+    $autoinject = get_post_meta($post->ID, "wpcb_autoinject", true);
+    echo "<div><label for='wpcb_autoinject'><input type='checkbox' name='wpcb_autoinject' value='true'";
+      if ( $autoinject ) {
+        echo " checked";  
+      }
+    echo ">".__('Yes', 'wpcb')."</label></div>";
+  echo "</p>";
+ */
 }
 
 
@@ -140,7 +206,7 @@ function wcb_save_postdata($post_id) {
   // because save_post can be triggered at other times
   if ( !wp_verify_nonce( $_POST['wcb_noncename'], plugin_basename( __FILE__ ) ) ) return;
 
-  // Check permissions
+  // Check permissions no need for 2? todo.
   if ( 'page' == $_POST['post_type'] ) {
     if ( !current_user_can( 'edit_page', $post_id ) ) return;
   } 
@@ -149,6 +215,8 @@ function wcb_save_postdata($post_id) {
   }
 
   // OK, we're authenticated: we need to find and save the data
+  
+  // stuff below? clean up? old stuff?
   global $wpdb;
   $table_name = $wpdb->prefix . "content_block";
   
@@ -160,12 +228,20 @@ function wcb_save_postdata($post_id) {
     delete_post_meta($post_id, 'wcb_extra_block_classes');
   }
   
-  // save field specific page
-  if ( $_POST['wcb_block_specific_page'] ) {
-    update_post_meta($post_id, 'wcb_block_specific_page', trim(htmlentities($_POST['wcb_block_specific_page']),'/'));
+  // save field extra classes
+  if ( $_POST['wpcb_link'] ) {
+    update_post_meta($post_id, 'wpcb_link', $_POST['wpcb_link']);
   }
   else {
-    delete_post_meta($post_id, 'wcb_block_specific_page');
+    delete_post_meta($post_id, 'wpcb_link');
+  }
+  
+  // save field specific page
+  delete_post_meta($post_id, 'wcb_block_specific_page');  
+  foreach ( $_POST['wcb_block_specific_page'] as $wcb_block_specific_page ) {
+    if ( !empty($wcb_block_specific_page) ) {
+      add_post_meta($post_id, 'wcb_block_specific_page', $wcb_block_specific_page);   
+    }
   }
   
   // save field region
@@ -175,117 +251,144 @@ function wcb_save_postdata($post_id) {
   else {
     delete_post_meta($post_id, 'wcb_regions');
   }
+  
+  // save autoinject
+  if ( $_POST['wpcb_autoinject'] ) {
+    update_post_meta($post_id, 'wpcb_autoinject', $_POST['wpcb_autoinject']);
+  }
+  else {
+    delete_post_meta($post_id, 'wpcb_autoinject');
+  }
    
   return;
 }
 
 
-function wcb_output($block_class='', $before='', $after='', $region=null) {
+function wcb_output($args) {
 
-  $after = str_replace("<", "</", $before);
-  global $post;
-  global $wpdb;
-  
-  $rs = $wpdb->get_results("SELECT * 
-    FROM $wpdb->postmeta
-    WHERE $wpdb->postmeta.meta_key = 'wcb_block_specific_page'
-  ");
-  
-  // does not work with port numbers
-  //$permalink = esc_url($_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"]);
-  $permalink = get_permalink();
+  $defaults = array(
+    'outer_block_class' => '',
+    'inner_block_class' => '',
+    'markup' => 'div',
+    'before' => '',
+    'after' => '',
+    'region' => null,
+    'echo' => true
+  );
+      
+  $r = wp_parse_args( $args, $defaults );
+  extract( $r, EXTR_SKIP );
     
-  // clean up the path
-  $remove = get_bloginfo('url');
-  $path = rtrim(str_replace($remove."/","",$permalink),"/");
+  $conditionals = get_body_class();
+
+  $query = array(
+    'post_type' => 'wpcb',
+    'order' => 'DESC',
+    'orderby' => 'menu_order',
+    'posts_per_page' => -1,
+    'meta_query' => array(
+      array(
+        'key' => 'wcb_block_specific_page',
+        'value' =>  $conditionals,
+      ),
+      array(
+        'key' => 'wcb_regions',
+        'value' =>  $region,
+      )
+    )
+  );
+  $results = get_posts($query);
   
-  if ( is_front_page() || is_home() ) $path = htmlentities("<front>");
+  if ( $echo ) :
+    global $post;
+    foreach ( $results as $post ) {
+
+      $xblock_class = get_post_meta($post->ID, "wcb_extra_block_classes", true);
+      $wpcb_link = get_post_meta($post->ID, "wpcb_link", true);
+      
+      $output .= "<!-- wpcb start -->";
+      $output .= "<$markup id='wp-content-block-$post->ID' class='wp-content-block $outer_block_class $xblock_class'>";
+      
+      if ( $wpcb_link ) $output .= "<a href='$wpcb_link'>";
+      
+      if ( has_post_thumbnail() ) :
+        $output .= "<figure>";
+          $output .= get_the_post_thumbnail();
+        $output .= "</figure>";
+      endif;
+
+      setup_postdata($post);
+      if ( $before ) :
+        $output .= $before. get_the_title() . $after;
+      endif;
+
+        $output .= "<div class='wp-content-block-content wp-content-block-inner $inner_block_class'>";
+          $output .= apply_filters('the_content', get_the_content());
+        $output .= "</div><!-- /wp-content-block-content --> ";
+        if ( current_user_can('edit_page') ) :
+          $output .= "<a href='".get_edit_post_link()."'>"._('Edit')."</a>";
+        endif;
+
+      if ( $wpcb_link ) $output .= "</a>";
+      $output .= "</$markup>";
+      $output .= "<!-- wpcb end -->";
+      unset($xblock_class);
+    }
+    
+    // check if autoinject is set to true? ->
+    // then autoinject the wpcb in selected region 
+    // IE no need for php-call in template file.
+    //if ( get_post_meta($post->ID, "wpcb_autoinject", true) ) :
+    
+    //endif;
+    
+    echo $output; 
+  else : 
+    return $results;
+  endif;
+  wp_reset_postdata();
+
+}
+
+/* todo
+*/
+function wpcb_autoinject($args, $instance) {
   
-  foreach ( $rs as $result ) {
-    if ( drupal_match_path($path, $result->meta_value) )
-      $get_blocks[] =  $result->post_id;
+  $options = get_option('wpcb_options');
+  if ( !$options['auto_inject'] ) return;
+  static $counter = 0;
+  
+  // only output wpcb first, kind of hackish, no good wp-actions
+  if ( $counter < 1 ) {
+    echo wcb_output();
   }
- 
-  
-  if ( $get_blocks ) {
-  	$my_query = array( 'post_type' => 'block', 'post__in' => $get_blocks, 'orderby' => 'menu_order', 'order' => 'ASC' );
-  	
-  	if ( $region ) {
-  		$my_query['meta_key'] = 'wcb_regions';
-			$my_query['meta_value'] = $region;
-  	}
-  	
-    $the_query = new WP_Query( $my_query );
-    
-    while ( $the_query->have_posts() ) : $the_query->the_post();
-      $block_class = get_post_meta($post->ID, "wcb_extra_block_classes", true);
-      $output .= "<section id=\"wp-content-block-".$post->ID."\" class=\"wp-content-block module ".$block_class."\">\n";
-
-				if ( has_post_thumbnail() ) {
-					$output .= "<figure>\n";
-	  				$output .= get_the_post_thumbnail() . "\n";
-	  			$output .= "</figure>\n";
-				} 
-
-	      if ( $before ) :
-	        $output .= "\t\t" . $before;
-	          $output .= get_the_title(); 
-	        $output .= $after . "\n";
-	      endif;
-	      $output .= "\t\t<div class=\"wp-content-block-content inner\">\n";
-	        $output .= "\t\t\t" . wpautop(do_shortcode(get_the_content())); 
-	      $output .= "\t\t</div> <!-- /wp-content-block-content -->\n";
-
-      $output .= "</section>\n";
-      unset($block_class);
-    endwhile;
-  
-    wp_reset_postdata();
-        
-    $html = preg_replace('#(<img.+?)height=(["\']?)\d*\2(.*?/?>)#i', '$1$3', $output);   
-    return preg_replace('#(<img.+?)width=(["\']?)\d*\2(.*?/?>)#i', '$1$3', $html);   
-  } //if
-
+  $counter++;
+  return;
 }
 
-// options page
-// Removed in 1.1
-add_action('admin_menu', 'plugin_admin_add_page');
-function plugin_admin_add_page() {
-	//add_options_page('Block options', 'Block options', 'activate_plugins', 'block_options', 'block_options_page');
+function add_wpcb_counts() {
+  if (!post_type_exists('wpcb')) {
+       return;
+  }
+
+  $num_posts = wp_count_posts( 'wpcb' );
+  $num = number_format_i18n( $num_posts->publish );
+  $text = _n( 'Block', 'Blocks', intval($num_posts->publish) );
+  if ( current_user_can( 'edit_posts' ) ) {
+      $num = "<a href='edit.php?post_type=wpcb'>$num</a>";
+      $text = "<a href='edit.php?post_type=wpcb'>$text</a>";
+  }
+  echo '<tr>';
+  echo '<td class="first b b-wpcb">' . $num . '</td>';
+  echo '<td class="t wpcbs">' . $text . '</td>';
+  echo '</tr>';
 }
-?>
-<?php // display the admin options page
-function block_options_page() {
-?>  
-	<div class="wrap">  
-		<?php screen_icon('options-general'); ?><h2><?php _e("Block options", 'wcb_textdomain' ); ?></h2>  
-		<form method="post" action="options.php">  
-			<?php wp_nonce_field('update-options') ?>  
-			<table class="form-table">
 
-				<tr valign="top">
-				<th scope="row"><?php _e( 'Regions' ); ?></th>
-    			<td>
-						<textarea rows="10" cols="50" class="code" id="block_options_regions" name="block_options_regions"><?php echo get_option('block_options_regions'); ?></textarea>
-						<p class="description">Add regions, one region per row</p>
-    			</td>
-  			</tr> 
-  		</table>
-			<?php submit_button(); ?>
-			<input type="hidden" name="action" value="update" />  
-      <input type="hidden" name="page_options" value="block_options_regions" /> 
-    </form>  
-	</div>  
-<?php  
-} 
-
-add_action( 'admin_head', 'wcb_icons' );
 function wcb_icons() {
     ?>
     <style type="text/css" media="screen">
-			.icon32-posts-block { background: url(<?php echo plugins_url('images/wp-content-block-icon32.png',  __FILE__); ?>) 0 0 no-repeat !important; }
-			#menu-posts-block .wp-menu-image { background: url(<?php echo plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__); ?>) no-repeat 6px 6px !important; }
-			#menu-posts-block:hover .wp-menu-image, #menu-posts-block.wp-has-current-submenu .wp-menu-image { background-position:6px -23px !important; }
+      .icon32-posts-wpcb { background: url(<?php echo plugins_url('images/wp-content-block-icon32.png',  __FILE__); ?>) 0 0 no-repeat !important; }
+      #menu-posts-wpcb .wp-menu-image { background: url(<?php echo plugins_url('images/wp-content-block-icon16-sprite.png',  __FILE__); ?>) no-repeat 6px 6px !important; }
+      #menu-posts-wpcb:hover .wp-menu-image, #menu-posts-block.wp-has-current-submenu .wp-menu-image { background-position:6px -23px !important; }
     </style>
 <?php } ?>
